@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+
+    
+
+    
+
+
+
+    <meta charset="utf-8">
+    
+    
+    
+    <title>Android IPC机制 | JoyTan&#39;s Blog | 做自己，不将就</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    
+    <meta name="theme-color" content="#3F51B5">
+    
+    
+    <meta name="keywords" content="Android,移动开发">
+    <meta name="description" content="Android IPC机制 在任何一个操作系统中都需要IPC机制的存在，例如：Linux中通过共享内存、命名通道等来实现进程间的通信。然而在Android系统中是什么来实现呢？答案是Binder。当然，不仅使用了Binder机制来实现了IPC,还使用了Socket实现不同终端之间的通信。 IPC介绍1、Serializable接口是Java中为对象提供标准的序列化和反序列化操作的接口，而Parce">
+<meta name="keywords" content="Android,移动开发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Android IPC机制">
+<meta property="og:url" content="http://joytan1209.github.io/2016/04/07/IPC机制/index.html">
+<meta property="og:site_name" content="JoyTan&#39;s Blog">
+<meta property="og:description" content="Android IPC机制 在任何一个操作系统中都需要IPC机制的存在，例如：Linux中通过共享内存、命名通道等来实现进程间的通信。然而在Android系统中是什么来实现呢？答案是Binder。当然，不仅使用了Binder机制来实现了IPC,还使用了Socket实现不同终端之间的通信。 IPC介绍1、Serializable接口是Java中为对象提供标准的序列化和反序列化操作的接口，而Parce">
+<meta property="og:updated_time" content="2017-06-05T01:44:17.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Android IPC机制">
+<meta name="twitter:description" content="Android IPC机制 在任何一个操作系统中都需要IPC机制的存在，例如：Linux中通过共享内存、命名通道等来实现进程间的通信。然而在Android系统中是什么来实现呢？答案是Binder。当然，不仅使用了Binder机制来实现了IPC,还使用了Socket实现不同终端之间的通信。 IPC介绍1、Serializable接口是Java中为对象提供标准的序列化和反序列化操作的接口，而Parce">
+    
+        <link rel="alternate" type="application/atom+xml" title="JoyTan&#39;s Blog" href="/atom.xml">
+    
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="stylesheet" href="//unpkg.com/hexo-theme-material-indigo@latest/css/style.css">
+    <script>window.lazyScripts=[]</script>
+</head>
+
+<body>
+    <div id="loading" class="active"></div>
+
+    <aside id="menu" class="hide" >
+  <div class="inner flex-row-vertical">
+    <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menu-off">
+        <i class="icon icon-lg icon-close"></i>
+    </a>
+    <div class="brand-wrap" style="background-image:url(/img/brand.jpg)">
+      <div class="brand">
+        <a href="/" class="avatar waves-effect waves-circle waves-light">
+          <img src="/img/avatar.jpg">
+        </a>
+        <hgroup class="introduce">
+          <h5 class="nickname">JoyTan</h5>
+          <a href="mailto:634206017@qq.com" title="634206017@qq.com" class="mail">634206017@qq.com</a>
+        </hgroup>
+      </div>
+    </div>
+    <div class="scroll-wrap flex-col">
+      <ul class="nav">
+        
+            <li class="waves-block waves-effect">
+              <a href="/"  >
+                <i class="icon icon-lg icon-home"></i>
+                主页
+              </a>
+            </li>
+        
+            <li class="waves-block waves-effect">
+              <a href="/archives"  >
+                <i class="icon icon-lg icon-archives"></i>
+                Archives
+              </a>
+            </li>
+        
+            <li class="waves-block waves-effect">
+              <a href="/tags"  >
+                <i class="icon icon-lg icon-tags"></i>
+                Tags
+              </a>
+            </li>
+        
+            <li class="waves-block waves-effect">
+              <a href="/categories"  >
+                <i class="icon icon-lg icon-th-list"></i>
+                Categories
+              </a>
+            </li>
+        
+            <li class="waves-block waves-effect">
+              <a href="https://github.com/yscoder" target="_blank" >
+                <i class="icon icon-lg icon-github"></i>
+                Github
+              </a>
+            </li>
+        
+            <li class="waves-block waves-effect">
+              <a href="http://www.weibo.com/ysweb" target="_blank" >
+                <i class="icon icon-lg icon-weibo"></i>
+                Weibo
+              </a>
+            </li>
+        
+            <li class="waves-block waves-effect">
+              <a href="/custom"  >
+                <i class="icon icon-lg icon-link"></i>
+                测试
+              </a>
+            </li>
+        
+      </ul>
+    </div>
+  </div>
+</aside>
+
+    <main id="main">
+        <header class="top-header" id="header">
+    <div class="flex-row">
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light on" id="menu-toggle">
+          <i class="icon icon-lg icon-navicon"></i>
+        </a>
+        <div class="flex-col header-title ellipsis">Android IPC机制</div>
+        
+        <div class="search-wrap" id="search-wrap">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="back">
+                <i class="icon icon-lg icon-chevron-left"></i>
+            </a>
+            <input type="text" id="key" class="search-input" autocomplete="off" placeholder="Search">
+            <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="search">
+                <i class="icon icon-lg icon-search"></i>
+            </a>
+        </div>
+        
+        
+        <a href="javascript:;" class="header-icon waves-effect waves-circle waves-light" id="menuShare">
+            <i class="icon icon-lg icon-share-alt"></i>
+        </a>
+        
+    </div>
+</header>
+<header class="content-header post-header">
+
+    <div class="container fade-scale">
+        <h1 class="title">Android IPC机制</h1>
+        <h5 class="subtitle">
+            
+                <time datetime="2016-04-07T02:38:40.000Z" itemprop="datePublished" class="page-time">
+  2016-04-07
+</time>
+
+
+            
+        </h5>
+    </div>
+
+    
+
+
+</header>
+
+
+<div class="container body-wrap">
+    
+    <aside class="post-widget">
+        <nav class="post-toc-wrap" id="post-toc">
+            <h4>TOC</h4>
+            <ol class="post-toc"><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#IPC介绍"><span class="post-toc-number">1.</span> <span class="post-toc-text">IPC介绍</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#实现IPC的方式"><span class="post-toc-number">2.</span> <span class="post-toc-text">实现IPC的方式</span></a></li><li class="post-toc-item post-toc-level-3"><a class="post-toc-link" href="#Binder连接池"><span class="post-toc-number">3.</span> <span class="post-toc-text">Binder连接池</span></a></li></ol>
+        </nav>
+    </aside>
+    
+<article id="post-IPC机制"
+  class="post-article article-type-post fade" itemprop="blogPost">
+
+    <div class="post-card">
+        <h1 class="post-card-title">Android IPC机制</h1>
+        <div class="post-meta">
+            <time class="post-time" title="2016-04-07 10:38:40" datetime="2016-04-07T02:38:40.000Z"  itemprop="datePublished">2016-04-07</time>
+
+            
+
+
+            
+<span id="busuanzi_container_page_pv" title="文章总阅读量" style='display:none'>
+    <i class="icon icon-eye icon-pr"></i><span id="busuanzi_value_page_pv"></span>
+</span>
+
+
+            
+
+        </div>
+        <div class="post-content" id="post-content" itemprop="postContent">
+            <p><strong>Android IPC机制</strong></p>
+<p>在任何一个操作系统中都需要IPC机制的存在，例如：Linux中通过共享内存、命名通道等来实现进程间的通信。然而在Android系统中是什么来实现呢？答案是Binder。当然，不仅使用了Binder机制来实现了IPC,还使用了Socket实现不同终端之间的通信。</p>
+<h3 id="IPC介绍"><a href="#IPC介绍" class="headerlink" title="IPC介绍"></a>IPC介绍</h3><p>1、Serializable接口是Java中为对象提供标准的序列化和反序列化操作的接口，而Parcelable接口是Android提供的序列化方式的接口。</p>
+<p>2、serialVersionUId是一串long型数字，主要是用来辅助序列化和反序列化的，原则上序列化后的数据中的serialVersionUId只有和当前类的serialVersionUId相同才能够正常地被反序列化。serialVersionUId的详细工作机制：序列化的时候系统会把当前类的serialVersionUId写入序列化的文件中，当反序列化的时候系统会去检测文件中的serialVersionUId，看它是否和当前类的serialVersionUId一致，如果一致就说明序列化的类的版本和当前类的版本是相同的，这个时候可以成功反序列化；否则说明版本不一致无法正常反序列化。一般来说，我们应该手动指定serialVersionUId的值：<br>    1.静态成员变量属于类不属于对象，所以不参与序列化过程；<br>    2.声明为transient的成员变量不参与序列化过程。<br>    3.Parcelable接口内部包装了可序列化的数据，可以在Binder中自由传输，Parcelable主要用在内存序列化上，可以直接序列化的有Intent、Bundle、Bitmap以及List和Map等等</p>
+<h3 id="实现IPC的方式"><a href="#实现IPC的方式" class="headerlink" title="实现IPC的方式"></a>实现IPC的方式</h3><p>1、 Bundle：Bundle实现了Parcelable接口，Activity、Service和Receiver都支持在Intent中传递Bundle数据。</p>
+<p>2、 Messenger：Messenger是一种轻量级的IPC方案，其底层是用AIDL实现的。Messenger是以串行的方式处理请求的，服务端只能一个个处理，不能并发执行。</p>
+<p>3、 AIDL：第一步创建一个Service和一个AIDL接口，第二步创建一个类继承自AIDL接口中的Stub类并实现Stub类中的抽象方法，然后在Service的onBind方法中返回这个类的对象，再在客户端绑定服务端Service，建立连接后就可以访问远程服务端的方法。</p>
+<pre><code>1.AIDL支持的数据类型：基本数据类型、String和CharSequence、ArrayList、HashMap、Parcelable以及AIDL；
+2.某些类即使和AIDL文件在同一个包中也要显式import进来；
+3.AIDL中除了基本数据类，其他类型的参数都要标上方向：in、out或者inout；
+4.AIDL接口中支持方法，不支持声明静态变量；
+5.为了方便AIDL的开发，建议把所有和AIDL相关的类和文件全部放入同一个包中，这样做的好处是，当客户端是另一个应用的时候，可以直接把整个包复制到客户端工程中。
+6.RemoteCallbackList是系统提供来删除跨进程Listener的接口。是一个泛型，可以管理任何的ALDL接口。
+</code></pre><p> 4、ContentProvider：</p>
+<pre><code>1.ContentProvider主要以表格的形式来组织数据，并且可以包含多个表；
+2.ContentProvider还支持文件数据，比如图片、视频等，系统提供的MediaStore就是文件类型的ContentProvider；
+3.ContentProvider对底层的数据存储方式没有任何要求，可以是SQLite、文件，甚至是内存中的一个对象都行；
+4.要观察ContentProvider中的数据变化情况，可以通过ContentResolver的registerContentObserver方法来注册观察者；
+</code></pre><p> 5、Socket：Socket是网络通信中“套接字”的概念，分为流式套接字和用户数据包套接字两种，分别对应网络的传输控制层的TCP和UDP协议。 </p>
+<p> 6、文件共享：这种方式简单，适合在对数据同步要求不高的进程之间进行通信，并且要妥善处理并发读写的问题。</p>
+<h3 id="Binder连接池"><a href="#Binder连接池" class="headerlink" title="Binder连接池"></a>Binder连接池</h3><p>如果项目规模较大，创建过多的Service是不合理的，因为service是系统资源，过多的service会使得应用看起来很重，所以最好的做法是将所有的AIDL放在同一个Service中去管理。其工作机制是：每一个业务模块创建自己的AIDL接口并实现此接口，此时不同业务模块之间不能有耦合，所有实现细节我们要单独开来，然后向服务端提供自己的唯一标识和其对应的Binder对象；对于服务端来说，只需要一个Service，服务端提供一个queryBinder接口，这个接口能够根据业务模块的特征来返回相应的Binder对象给它们，不同的业务模块拿到所需的Binder对象后就可以进行远程方法调用了。<br>Binder连接池的主要作用就是将每个业务模块的Binder请求统一转发到远程Service去执行，从而避免了重复创建Service的过程。</p>
+
+        </div>
+
+        <blockquote class="post-copyright">
+    <div class="content">
+        
+<span class="post-time">
+    Last updated: <time datetime="2017-06-05T01:44:17.000Z" itemprop="dateUpdated">2017-06-05 09:44:17</time>
+</span><br>
+
+
+        
+        这里可以写作者留言，标签和 hexo 中所有变量及辅助函数等均可调用，示例：<a href="/2016/04/07/IPC机制/" target="_blank" rel="external">http://joytan1209.github.io/2016/04/07/IPC机制/</a>
+        
+    </div>
+    <footer>
+        <a href="http://joytan1209.github.io">
+            <img src="/img/avatar.jpg" alt="JoyTan">
+            JoyTan
+        </a>
+    </footer>
+</blockquote>
+
+        
+<div class="page-reward">
+    <a id="rewardBtn" href="javascript:;" class="page-reward-btn waves-effect waves-circle waves-light">赏</a>
+</div>
+
+
+
+        <div class="post-footer">
+            
+	<ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Android/">Android</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/移动开发/">移动开发</a></li></ul>
+
+
+            
+<div class="page-share-wrap">
+    
+
+<div class="page-share" id="pageShare">
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" target="_blank" href="http://service.weibo.com/share/share.php?url=http://joytan1209.github.io/2016/04/07/IPC机制/&title=《Android IPC机制》 — JoyTan's Blog&pic=http://joytan1209.github.io/img/avatar.jpg" data-title="微博">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns wxFab" href="javascript:;" data-title="微信">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" target="_blank" href="http://connect.qq.com/widget/shareqq/index.html?url=http://joytan1209.github.io/2016/04/07/IPC机制/&title=《Android IPC机制》 — JoyTan's Blog&source=" data-title=" QQ">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=http://joytan1209.github.io/2016/04/07/IPC机制/" data-title=" Facebook">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" target="_blank" href="https://twitter.com/intent/tweet?text=《Android IPC机制》 — JoyTan's Blog&url=http://joytan1209.github.io/2016/04/07/IPC机制/&via=http://joytan1209.github.io" data-title=" Twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="google share-sns" target="_blank" href="https://plus.google.com/share?url=http://joytan1209.github.io/2016/04/07/IPC机制/" data-title=" Google+">
+          <i class="icon icon-google-plus"></i>
+        </a>
+      </li>
+    </ul>
+ </div>
+
+
+
+    <a href="javascript:;" id="shareFab" class="page-share-fab waves-effect waves-circle">
+        <i class="icon icon-share-alt icon-lg"></i>
+    </a>
+</div>
+
+
+
+        </div>
+    </div>
+
+    
+<nav class="post-nav flex-row flex-justify-between">
+  
+    <div class="waves-block waves-effect prev">
+      <a href="/2016/04/08/动态权限管理/" id="post-prev" class="post-nav-link">
+        <div class="tips"><i class="icon icon-angle-left icon-lg icon-pr"></i> Prev</div>
+        <h4 class="title">Android 6.0 动态权限管理</h4>
+      </a>
+    </div>
+  
+
+  
+</nav>
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</article>
+
+<div id="reward" class="page-modal reward-lay">
+    <a class="close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <h3 class="reward-title">
+        <i class="icon icon-quote-left"></i>
+        谢谢大爷~
+        <i class="icon icon-quote-right"></i>
+    </h3>
+    <ul class="reward-items">
+        
+        <li>
+            <img src="/img/wechat.jpg" title="微信打赏二维码" alt="微信打赏二维码">
+            <p>微信</p>
+        </li>
+        
+
+        
+        <li>
+            <img src="/img/alipay.jpg" title="支付宝打赏二维码" alt="支付宝打赏二维码">
+            <p>支付宝</p>
+        </li>
+        
+    </ul>
+</div>
+
+
+
+</div>
+
+        <footer class="footer">
+    <div class="top">
+        
+<p>
+    <span id="busuanzi_container_site_uv" style='display:none'>
+        站点总访客数：<span id="busuanzi_value_site_uv"></span>
+    </span>
+    <span id="busuanzi_container_site_pv" style='display:none'>
+        站点总访问量：<span id="busuanzi_value_site_pv"></span>
+    </span>
+</p>
+
+
+        <p>
+            
+                <span><a href="/atom.xml" target="_blank" class="rss" title="rss"><i class="icon icon-lg icon-rss"></i></a></span>
+            
+            <span>This blog is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.</span>
+        </p>
+    </div>
+    <div class="bottom">
+        <p>
+            <span>Power by <a href="http://hexo.io/" target="_blank">Hexo</a> Theme <a href="https://github.com/yscoder/hexo-theme-indigo" target="_blank">indigo</a></span>
+            <span>JoyTan &copy; 2015 - 2017</span>
+        </p>
+    </div>
+</footer>
+
+    </main>
+    <div class="mask" id="mask"></div>
+<a href="javascript:;" id="gotop" class="waves-effect waves-circle waves-light"><span class="icon icon-lg icon-chevron-up"></span></a>
+
+
+
+<div class="global-share" id="globalShare">
+    <ul class="reset share-icons">
+      <li>
+        <a class="weibo share-sns" target="_blank" href="http://service.weibo.com/share/share.php?url=http://joytan1209.github.io/2016/04/07/IPC机制/&title=《Android IPC机制》 — JoyTan's Blog&pic=http://joytan1209.github.io/img/avatar.jpg" data-title="微博">
+          <i class="icon icon-weibo"></i>
+        </a>
+      </li>
+      <li>
+        <a class="weixin share-sns wxFab" href="javascript:;" data-title="微信">
+          <i class="icon icon-weixin"></i>
+        </a>
+      </li>
+      <li>
+        <a class="qq share-sns" target="_blank" href="http://connect.qq.com/widget/shareqq/index.html?url=http://joytan1209.github.io/2016/04/07/IPC机制/&title=《Android IPC机制》 — JoyTan's Blog&source=" data-title=" QQ">
+          <i class="icon icon-qq"></i>
+        </a>
+      </li>
+      <li>
+        <a class="facebook share-sns" target="_blank" href="https://www.facebook.com/sharer/sharer.php?u=http://joytan1209.github.io/2016/04/07/IPC机制/" data-title=" Facebook">
+          <i class="icon icon-facebook"></i>
+        </a>
+      </li>
+      <li>
+        <a class="twitter share-sns" target="_blank" href="https://twitter.com/intent/tweet?text=《Android IPC机制》 — JoyTan's Blog&url=http://joytan1209.github.io/2016/04/07/IPC机制/&via=http://joytan1209.github.io" data-title=" Twitter">
+          <i class="icon icon-twitter"></i>
+        </a>
+      </li>
+      <li>
+        <a class="google share-sns" target="_blank" href="https://plus.google.com/share?url=http://joytan1209.github.io/2016/04/07/IPC机制/" data-title=" Google+">
+          <i class="icon icon-google-plus"></i>
+        </a>
+      </li>
+    </ul>
+ </div>
+
+
+<div class="page-modal wx-share" id="wxShare">
+    <a class="close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <img src="//api.qrserver.com/v1/create-qr-code/?data=http://joytan1209.github.io/2016/04/07/IPC机制/" alt="微信分享二维码">
+</div>
+
+
+
+
+    <script src="//cdn.bootcss.com/node-waves/0.7.4/waves.min.js"></script>
+<script>
+var BLOG = { ROOT: '/', SHARE: true, REWARD: true };
+
+
+
+</script>
+
+<script src="//unpkg.com/hexo-theme-material-indigo@latest/js/main.min.js"></script>
+
+
+<div class="search-panel" id="search-panel">
+    <ul class="search-result" id="search-result"></ul>
+</div>
+<template id="search-tpl">
+<li class="item">
+    <a href="{path}" class="waves-block waves-effect">
+        <div class="title ellipsis" title="{title}">{title}</div>
+        <div class="flex-row flex-middle">
+            <div class="tags ellipsis">
+                {tags}
+            </div>
+            <time class="flex-col time">{date}</time>
+        </div>
+    </a>
+</li>
+</template>
+
+<script src="//unpkg.com/hexo-theme-material-indigo@latest/js/search.min.js" async></script>
+
+
+
+
+
+
+<script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+<script>
+(function() {
+    var OriginTitile = document.title, titleTime;
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            document.title = '死鬼去哪里了！';
+            clearTimeout(titleTime);
+        } else {
+            document.title = '(つェ⊂)咦!又好了!';
+            titleTime = setTimeout(function() {
+                document.title = OriginTitile;
+            },2000);
+        }
+    });
+})();
+</script>
+
+
+
+</body>
+</html>
